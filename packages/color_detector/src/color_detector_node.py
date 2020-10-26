@@ -23,37 +23,31 @@ class ColorDetectorNode(DTROS):
         # TODO this should be a param but fixed for now
         self.color = 'yellow'
 
-    def callback(self, data):
-        # convert ros compressed img to opencv
-        # pass to color detector
-        # pass to bounding box drawing
+        # TODO this should be a param but fixed for now
+        self.downscale = 0.6
 
-        # convert back to ros compressed image
-        # publish
+    def callback(self, data):
         img = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding="passthrough")
 
-        img = self.detectColors(img)
+        img = self.resize(img, self.downscale)
+        color_detections = self.detectColors(img)
+        self.drawBoundingBoxes(img, color_detections)
+        img = self.resize(img, 1/self.downscale)
 
-        debug_img = self.bridge.cv2_to_compressed_imgmsg(img, dst_format='jpeg')
+        debug_msg = self.bridge.cv2_to_compressed_imgmsg(img, dst_format='jpeg')
+        self.pub.publish(debug_msg)
 
-        self.pub.publish(debug_img)
-
-    # returns the location of bounding boxes
     def detectColors(self, img):
-        downscale = 0.75
-        img = self.resize(img, downscale)
         img = cv.GaussianBlur(img,(3,3),cv.BORDER_DEFAULT)
         img = self.whiteBalance(img)
         
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        
         lower, upper = self.colorToHSVRange(self.color)
-
         isolated_color = cv.inRange(img, lower, upper)
-        isolated_color = cv.erode(isolated_color, None, iterations=4)
-        isolated_color = cv.dilate(isolated_color, None, iterations=4)
 
-        isolated_color = self.resize(isolated_color, 1/downscale)
+        isolated_color = cv.erode(isolated_color, None, iterations=5)
+        isolated_color = cv.dilate(isolated_color, None, iterations=6)
+
         return isolated_color
 
     @staticmethod
@@ -73,8 +67,14 @@ class ColorDetectorNode(DTROS):
         return cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
 
     @staticmethod
-    def boundingBoxColors(img, bounding_boxes):
-        pass
+    def drawBoundingBoxes(img, color_detections):
+        cnts, _ = cv.findContours(color_detections, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+        for cnt in cnts:
+            x,y,w,h = cv.boundingRect(cnt)
+            if w<15 or h<15 or w*h < 250:
+                continue
+            else:
+                cv.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
 
     @staticmethod
     def colorToHSVRange(color):
