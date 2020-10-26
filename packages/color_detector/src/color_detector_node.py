@@ -12,11 +12,11 @@ class ColorDetectorNode(DTROS):
 
     def __init__(self, node_name):
         # initialize the DTROS parent class
-        super(ColorDetectorNode, self).__init__(node_name=node_name, node_type=NodeType.Perception)
+        super(ColorDetectorNode, self).__init__(node_name=node_name, node_type=NodeType.PERCEPTION)
         # bridge between opencv and ros
         self.bridge = CvBridge()
         # construct subscriber for images
-        self.sub = rospy.Subscriber('~duckie_cam/compressed', CompressedImage, self.callback)
+        self.sub = rospy.Subscriber('/hobojones/image_publisher_node/duckie_cam/compressed', CompressedImage, self.callback)
         # construct publisher for debug images
         self.pub = rospy.Publisher('~debug_images/compressed', CompressedImage, queue_size=10)
 
@@ -30,20 +30,31 @@ class ColorDetectorNode(DTROS):
 
         # convert back to ros compressed image
         # publish
-        pass
+        img = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding="passthrough")
+
+        img = self.detectColors(img)
+
+        debug_img = self.bridge.cv2_to_compressed_imgmsg(img, dst_format='jpeg')
+
+        self.pub.publish(debug_img)
 
     # returns the location of bounding boxes
     def detectColors(self, img):
+        downscale = 0.75
+        img = self.resize(img, downscale)
+        img = cv.GaussianBlur(img,(3,3),cv.BORDER_DEFAULT)
         img = self.whiteBalance(img)
-        img = cv.GaussianBlur(img,(5,5),cv.BORDER_DEFAULT)
-
+        
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
         
         lower, upper = self.colorToHSVRange(self.color)
 
         isolated_color = cv.inRange(img, lower, upper)
+        isolated_color = cv.erode(isolated_color, None, iterations=4)
+        isolated_color = cv.dilate(isolated_color, None, iterations=4)
 
-        pass
+        isolated_color = self.resize(isolated_color, 1/downscale)
+        return isolated_color
 
     @staticmethod
     def whiteBalance(img):
@@ -56,13 +67,19 @@ class ColorDetectorNode(DTROS):
         return result
 
     @staticmethod
+    def resize(img, scale):
+        width = int(img.shape[1] * scale)
+        height = int(img.shape[0] * scale)
+        return cv.resize(img, (width, height), interpolation=cv.INTER_AREA)
+
+    @staticmethod
     def boundingBoxColors(img, bounding_boxes):
         pass
 
     @staticmethod
     def colorToHSVRange(color):
         if color == 'yellow':
-            return np.array([22, 93, 0], dtype="uint8"), np.array([45, 255, 255], dtype="uint8")
+            return np.array([25, 30, 0], dtype="uint8"), np.array([45, 255, 255], dtype="uint8")
         else:
             raise Exception('undefined color')
 
