@@ -1,0 +1,11 @@
+<launch>
+
+  <group ns="$(arg veh)">  
+
+    <node pkg="color_detector" type="image_publisher_node.py" name="image_publisher_node" output="screen"/>
+
+    <node pkg="color_detector" type="color_detector_node.py" name="color_detector_node"  output="screen"/>
+
+  </group>
+
+</launch>
