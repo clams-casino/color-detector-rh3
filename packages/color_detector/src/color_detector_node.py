@@ -89,7 +89,7 @@ class ColorDetectorNode(DTROS):
         if color == 'yellow':
             return np.array([25, 30, 0], dtype="uint8"), np.array([45, 255, 255], dtype="uint8")
         elif color == 'blue':
-            return np.array([100,30,0], dtype='uint8'), np.array([150,255,255], dtype='uint8')
+            return np.array([100,80,0], dtype='uint8'), np.array([140,255,255], dtype='uint8')
         else:
             raise Exception('Undefined detection color')
 
