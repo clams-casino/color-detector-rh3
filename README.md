@@ -1,6 +1,19 @@
-# To run
+# Usage
 
-to run it on the duckiebot
+Turn off duckiebot interface containers first to use camera
+
+Can detect yellow and blue. Works with yellow duckies
+
+Build it on the duckiebot. Assuming in the root directory of the repo
 ```
-docker -H hobojones.local run --privileged --network host duckietown/color-detector-rh3:v2-arm32v7
+devel build -f -H <duckiebot name>.local
 ```
+
+Running it on the duckiebot
+```
+docker -H <duckiebot name>.local run --rm --privileged --network host <name of the built image>
+```
+
+Publishes the debug images to the topic `~color_detector_node/debug_images/compressed`
+
+Change the detection color using `rosparam set <vehicle name>/color_detector_node/color <color>` to `"yellow"` or `"blue"`
