@@ -2,7 +2,7 @@
   <name>color_detector</name>
   <version>0.1.0</version>
   <description>
-  Color detctor for RH3, publish camera images, and draw bounding boxes over regions of the specified color
+  Color detctor for RH3. Draw bounding boxes over regions of the specified color. Runs on laptop
   </description>
   <maintainer email="mike.zhang.619@gmail.com">Mike Zhang</maintainer>
   <license>None</license>

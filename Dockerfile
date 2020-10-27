@@ -1,6 +1,6 @@
 # parameters
 ARG REPO_NAME="color-detector-rh3"
-ARG DESCRIPTION="Color detctor for RH3, publish camera images, and draw bounding boxes over regions of the specified color"
+ARG DESCRIPTION="Color detctor for RH3. Draw bounding boxes over regions of the specified color. Runs on laptop"
 ARG MAINTAINER="Mike Zhang mike.zhang.619@gmail.com"
 # pick an icon from: https://fontawesome.com/v4.7.0/icons/
 ARG ICON="cube"
