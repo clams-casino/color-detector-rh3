@@ -5,7 +5,7 @@ import cv2 as cv
 import numpy as np
 from cv_bridge import CvBridge
 
-from duckietown.dtros import DTROS, NodeType
+from duckietown.dtros import DTROS, NodeType, DTParam, ParamType
 from sensor_msgs.msg import CompressedImage
 
 class ColorDetectorNode(DTROS):
@@ -16,35 +16,43 @@ class ColorDetectorNode(DTROS):
         # bridge between opencv and ros
         self.bridge = CvBridge()
         # construct subscriber for images
-        self.sub = rospy.Subscriber('/hobojones/image_publisher_node/duckie_cam/compressed', CompressedImage, self.callback)
+        self.sub = rospy.Subscriber('~duckie_cam/compressed', CompressedImage, self.callback)
         # construct publisher for debug images
         self.pub = rospy.Publisher('~debug_images/compressed', CompressedImage, queue_size=10)
 
-        # TODO this should be a param but fixed for now
-        self.color = 'yellow'
-
-        # TODO this should be a param but fixed for now
-        self.downscale = 0.6
+        self.color = DTParam(
+            '~color',
+            param_type=ParamType.STRING,
+        )
+        self.downscale = DTParam(
+            '~downscale',
+            param_type=ParamType.FLOAT,
+            min_value=0.5,
+            max_value=1.0
+        )
 
     def callback(self, data):
+        try:
+            lower, upper = self.colorToHSVRange(self.color.value)
+        except Exception:
+            return
+
         img = self.bridge.compressed_imgmsg_to_cv2(data, desired_encoding="passthrough")
 
-        img = self.resize(img, self.downscale)
-        color_detections = self.detectColors(img)
+        img = self.resize(img, self.downscale.value)
+        color_detections = self.detectColors(img, (lower,upper))
         self.drawBoundingBoxes(img, color_detections)
-        img = self.resize(img, 1/self.downscale)
+        img = self.resize(img, 1/self.downscale.value)
 
         debug_msg = self.bridge.cv2_to_compressed_imgmsg(img, dst_format='jpeg')
         self.pub.publish(debug_msg)
 
-    def detectColors(self, img):
+    def detectColors(self, img, color_range):
         img = cv.GaussianBlur(img,(3,3),cv.BORDER_DEFAULT)
         img = self.whiteBalance(img)
-        
         img = cv.cvtColor(img, cv.COLOR_BGR2HSV)
-        lower, upper = self.colorToHSVRange(self.color)
-        isolated_color = cv.inRange(img, lower, upper)
-
+       
+        isolated_color = cv.inRange(img, color_range[0], color_range[1])
         isolated_color = cv.erode(isolated_color, None, iterations=5)
         isolated_color = cv.dilate(isolated_color, None, iterations=6)
 
@@ -71,7 +79,7 @@ class ColorDetectorNode(DTROS):
         cnts, _ = cv.findContours(color_detections, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
         for cnt in cnts:
             x,y,w,h = cv.boundingRect(cnt)
-            if w<15 or h<15 or w*h < 250:
+            if w<0.05*img.shape[1] or h<0.05*img.shape[0] or w*h < 0.05*0.05*img.shape[0]*img.shape[1]:
                 continue
             else:
                 cv.rectangle(img,(x,y),(x+w,y+h),(0,255,0),2)
@@ -80,8 +88,10 @@ class ColorDetectorNode(DTROS):
     def colorToHSVRange(color):
         if color == 'yellow':
             return np.array([25, 30, 0], dtype="uint8"), np.array([45, 255, 255], dtype="uint8")
+        elif color == 'blue':
+            return np.array([100,30,0], dtype='uint8'), np.array([150,255,255], dtype='uint8')
         else:
-            raise Exception('undefined color')
+            raise Exception('Undefined detection color')
 
 if __name__ == '__main__':
     # create the node

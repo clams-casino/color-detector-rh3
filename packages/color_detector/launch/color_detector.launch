@@ -4,7 +4,10 @@
 
     <node pkg="color_detector" type="image_publisher_node.py" name="image_publisher_node" output="screen"/>
 
-    <node pkg="color_detector" type="color_detector_node.py" name="color_detector_node"  output="screen"/>
+    <node pkg="color_detector" type="color_detector_node.py" name="color_detector_node"  output="screen">
+          <rosparam file="$(find color_detector)/config/color_detector_config.yaml" command="load"/>
+          <remap from="~duckie_cam/compressed" to="/$(arg veh)/image_publisher_node/duckie_cam/compressed"/>
+    </node>
 
   </group>
 
