@@ -95,6 +95,7 @@ class ColorDetectorNode(DTROS):
 
 if __name__ == '__main__':
     # create the node
+    rospy.loginfo('Starting color detector')
     node = ColorDetectorNode(node_name='color_detector_node')
     # keep spinning
     rospy.spin()

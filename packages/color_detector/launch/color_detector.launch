@@ -1,8 +1,6 @@
 <launch>
 
-  <group ns="$(arg veh)">  
-
-    <node pkg="color_detector" type="image_publisher_node.py" name="image_publisher_node" output="screen"/>
+  <group ns="laptop">  
 
     <node pkg="color_detector" type="color_detector_node.py" name="color_detector_node"  output="screen">
           <rosparam file="$(find color_detector)/config/color_detector_config.yaml" command="load"/>
