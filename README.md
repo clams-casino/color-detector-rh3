@@ -3,7 +3,7 @@ Can detect yellow and blue. Works with yellow duckies
 
 Build it on the laptop. Assuming in the root directory of the repo
 ```
-devel build -f 
+dts devel build -f 
 ```
 
 Running it on the laptop while recieving messages from the duckiebot
